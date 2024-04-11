@@ -1,128 +1,148 @@
-#include<stdio.h>
-#include<stdlib.h>
- 
-struct data {
-	int key;
-	int value;
+#include <stdio.h>
+#include <stdlib.h>
+
+#define TABLE_SIZE 10
+
+struct KeyValue {
+    int key;
+    int value;
+    struct KeyValue* next;
 };
- 
-struct data *array;
-int capacity = 10;
-int size = 0;
- 
 
-int hashcode(int key) {
-	return (key % capacity);
-}
+struct HashTable {
+    struct KeyValue* table[TABLE_SIZE];
+};
 
-int if_prime(int n) {
-	int i;
-	if ( n == 1  ||  n == 0) 
-  	return 0;
-	for (i = 2; i < n; i++) 
-  	if (n % i == 0) 
-  		return 0;
-	return 1;
+// Initialize the hash table
+struct HashTable* createHashTable() {
+    struct HashTable* hashTable = (struct HashTable*)malloc(sizeof(struct HashTable));
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        hashTable->table[i] = NULL;
+    }
+    return hashTable;
 }
 
-int get_prime(int n) {
-	if (n % 2 == 0) 
-    n++;
-	for (; !if_prime(n); n += 2);
- 	return n;
+// Hash function
+int hashCode(int key) {
+    return key % TABLE_SIZE;
 }
- 
 
- 
-void init_array() {
-	int i;
-	capacity = get_prime(capacity);
-	array = (struct data*) malloc(capacity * sizeof(struct data));
-	for (i = 0; i < capacity; i++) {
-		array[i].key = 0;
-		array[i].value = 0;
-	}
+// Insert key-value pair into the hash table
+void insert(struct HashTable* hashTable, int key) {
+    int index = hashCode(key);
+    struct KeyValue* newNode = (struct KeyValue*)malloc(sizeof(struct KeyValue));
+    newNode->key = key;
+    newNode->value = 1;
+    newNode->next = NULL;
+
+    if (hashTable->table[index] == NULL) {
+        hashTable->table[index] = newNode;
+    } else {
+        struct KeyValue* temp = hashTable->table[index];
+        while (temp->next != NULL) {
+            if (temp->key == key) {
+                temp->value++;
+                free(newNode);
+                return;
+            }
+            temp = temp->next;
+        }
+        temp->next = newNode;
+    }
 }
- 
-void insert(int key) {
-	int index = hashcode(key);
-	if (array[index].value == 0) {
-		array[index].key = key;
-		array[index].value = 1;
-		size++;
-		printf("\n Key (%d) has been inserted\n", key);
-	}
-	else if(array[index].key == key) {
-		printf("\n Key (%d) already present, hence updating its value\n", key);
-		array[index].value += 1;
-	}
-	else 
-		printf("\n ELEMENT CANNOT BE INSERTED \n");
+
+// Remove key-value pair from the hash table
+void removeElement(struct HashTable* hashTable, int key) {
+    int index = hashCode(key);
+    struct KeyValue* current = hashTable->table[index];
+    struct KeyValue* prev = NULL;
+
+    while (current != NULL) {
+        if (current->key == key) {
+            if (prev == NULL) {
+                hashTable->table[index] = current->next;
+            } else {
+                prev->next = current->next;
+            }
+            free(current);
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
+    printf("Key %d not found\n", key);
 }
- 
-void remove_element(int key) {
-	int index  = hashcode(key);
-	if(array[index].value == 0)
-		printf("\n This key does not exist \n");
-	else {
-		array[index].key = 0;
-		array[index].value = 0;
-		size--;
-		printf("\n Key (%d) has been removed \n", key);
-	}
+
+// Display the contents of the hash table
+void display(struct HashTable* hashTable) {
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        printf("Bucket %d: ", i);
+        struct KeyValue* current = hashTable->table[i];
+        while (current != NULL) {
+            printf("(%d, %d) ", current->key, current->value);
+            current = current->next;
+        }
+        printf("\n");
+    }
 }
- 
-void display() {
-	int i;
-	for (i = 0; i < capacity; i++)   
-		if (array[i].value == 0)
-      printf("\n Array[%d] has no elements \n", i);
-		else
-			printf("\n Array[%d] has elements: key(%d) and value(%d) \t", i, array[i].key, array[i].value);
+
+// Get the size of the hash table
+int sizeOfHashTable(struct HashTable* hashTable) {
+    int count = 0;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        struct KeyValue* current = hashTable->table[i];
+        while (current != NULL) {
+            count++;
+            current = current->next;
+        }
+    }
+    return count;
 }
- 
-int size_of_hashtable() {
-	return size;
+
+int main() {
+    struct HashTable* hashTable = createHashTable();
+    int choice, key, c;
+
+    do {
+        printf("\nImplementation of Hash Table in C\n\n");
+        printf("MENU:\n");
+        printf("1. Insert item into the hash table\n");
+        printf("2. Remove item from the hash table\n");
+        printf("3. Check the size of the hash table\n");
+        printf("4. Display the hash table\n");
+        printf("\nEnter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                printf("\nInserting element into the hash table\n");
+                printf("Enter key: ");
+                scanf("%d", &key);
+                insert(hashTable, key);
+                break;
+            case 2:
+                printf("\nDeleting element from the hash table\n");
+                printf("Enter the key to delete: ");
+                scanf("%d", &key);
+                removeElement(hashTable, key);
+                break;
+            case 3:
+                printf("\nSize of the hash table is: %d\n", sizeOfHashTable(hashTable));
+                break;
+            case 4:
+                printf("\nDisplaying the hash table\n");
+                display(hashTable);
+                break;
+            default:
+                printf("\nWrong input\n");
+        }
+
+        printf("\nDo you want to continue? (1 for yes): ");
+        scanf("%d", &c);
+    } while (c == 1);
+
+    return 0;
 }
- 
-void main() {
-	int choice, key, value, n, c;
-	init_array();
-	do {
-		printf("\n Implementation of Hash Table in C \n\n");
-		printf("MENU-:  \n1.Inserting item in the Hash Table" 
-                               "\n2.Removing item from the Hash Table"
-		               "\n3.Check the size of Hash Table" 
-                               "\n4.Display a Hash Table"
-		       "\n\n Please enter your choice :");
- 
-		scanf("%d", &choice);
-		switch(choice) {
- 		case 1:
- 		      printf("Inserting element in Hash Table\n");
-		      printf("Enter key:\t");
-		      scanf("%d", &key);
-		      insert(key);
- 		      break;
- 		case 2:
- 		      printf("Deleting in Hash Table \n Enter the key to delete: ");
-		      scanf("%d", &key);
-		      remove_element(key);
- 		      break;
- 		case 3:
- 		      n = size_of_hashtable();
-		      printf("Size of Hash Table is: %d\n", n);
- 		      break;
- 
-		case 4:
- 		      display();
- 		      break;
- 
-		default:
-          printf("Wrong Input\n");
- 		}
- 		printf("\n Do you want to continue: (press 1 for yes)? \t");
-		scanf("%d", &c);
- 
-	}while(c == 1);
-}
+
+/*Observations
+THis program is to understand the different types of hash functions and its use*/

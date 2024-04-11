@@ -1,87 +1,161 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct node {
-  int item;
-  struct node* left;
-  struct node* right;
-};
+typedef struct node {
+    int item;
+    struct node* left;
+    struct node* right;
+} Node;
 
-// Inorder traversal
-void inorderTraversal(struct node* root) {
-  if (root == NULL) 
-    return;
-  inorderTraversal(root->left);
-  printf("%d ->", root->item);
-  inorderTraversal(root->right);
+// Stack node structure
+typedef struct stackNode {
+    Node* data;
+    struct stackNode* next;
+} StackNode;
+
+// Stack structure
+typedef struct stack {
+    StackNode* top;
+} Stack;
+
+// Initialize an empty stack
+Stack* createStack() {
+    Stack* stack = (Stack*)malloc(sizeof(Stack));
+    stack->top = NULL;
+    return stack;
 }
 
-// Preorder traversal
-void preorderTraversal(struct node* root) {
-  if (root == NULL) 
-    return;
-  printf("%d ->", root->item);
-  preorderTraversal(root->left);
-  preorderTraversal(root->right);
+// Check if the stack is empty
+int isEmpty(Stack* stack) {
+    return stack->top == NULL;
 }
 
-// Postorder traversal
-void postorderTraversal(struct node* root) {
-  if (root == NULL) 
-    return;
-  postorderTraversal(root->left);
-  postorderTraversal(root->right);
-  printf("%d ->", root->item);
+// Push a node onto the stack
+void push(Stack* stack, Node* data) {
+    StackNode* newNode = (StackNode*)malloc(sizeof(StackNode));
+    newNode->data = data;
+    newNode->next = stack->top;
+    stack->top = newNode;
 }
 
-// Create a new Node
-struct node* createNode(int value) {
-  struct node* newNode = malloc(sizeof(struct node));
-  newNode->item = value;
-  newNode->left = NULL;
-  newNode->right = NULL;
-
-  return newNode;
+// Pop a node from the stack
+Node* pop(Stack* stack) {
+    if (isEmpty(stack)) {
+        printf("Stack underflow\n");
+        return NULL;
+    }
+    StackNode* temp = stack->top;
+    Node* popped = temp->data;
+    stack->top = temp->next;
+    free(temp);
+    return popped;
 }
 
-// Insert on the left of the node
-struct node* insertLeft(struct node* root, int value) {
-  root->left = createNode(value);
-  return root->left;
+// Inorder traversal using iterative method
+void inorderTraversalIterative(Node* root) {
+    if (root == NULL)
+        return;
+
+    Stack* stack = createStack();
+    Node* current = root;
+
+    while (current != NULL || !isEmpty(stack)) {
+        while (current != NULL) {
+            push(stack, current);
+            current = current->left;
+        }
+        current = pop(stack);
+        printf("%d -> ", current->item);
+        current = current->right;
+    }
 }
 
-// Insert on the right of the node
-struct node* insertRight(struct node* root, int value) {
-  root->right = createNode(value);
-  return root->right;
+// Preorder traversal using iterative method
+void preorderTraversalIterative(Node* root) {
+    if (root == NULL)
+        return;
+
+    Stack* stack = createStack();
+    push(stack, root);
+
+    while (!isEmpty(stack)) {
+        Node* current = pop(stack);
+        printf("%d -> ", current->item);
+
+        if (current->right != NULL)
+            push(stack, current->right);
+        if (current->left != NULL)
+            push(stack, current->left);
+    }
+}
+
+// Postorder traversal using iterative method
+void postorderTraversalIterative(Node* root) {
+    if (root == NULL)
+        return;
+
+    Stack* stack1 = createStack();
+    Stack* stack2 = createStack();
+    push(stack1, root);
+
+    while (!isEmpty(stack1)) {
+        Node* current = pop(stack1);
+        push(stack2, current);
+
+        if (current->left != NULL)
+            push(stack1, current->left);
+        if (current->right != NULL)
+            push(stack1, current->right);
+    }
+
+    while (!isEmpty(stack2)) {
+        Node* current = pop(stack2);
+        printf("%d -> ", current->item);
+    }
+}
+
+// Create a new node
+Node* createNode(int value) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->item = value;
+    newNode->left = NULL;
+    newNode->right = NULL;
+    return newNode;
+}
+
+// Insert a node on the left of the parent node
+void insertLeft(Node* parent, int value) {
+    parent->left = createNode(value);
+}
+
+// Insert a node on the right of the parent node
+void insertRight(Node* parent, int value) {
+    parent->right = createNode(value);
 }
 
 int main() {
-  struct node* root = createNode(1);
-  insertLeft(root, 2);
-  insertRight(root, 3);
-  insertLeft(root->left, 4);
+    Node* root = createNode(1);
+    insertLeft(root, 2);
+    insertRight(root, 3);
+    insertLeft(root->left, 4);
 
-  printf("Inorder traversal \n");
-  inorderTraversal(root);
+    printf("Inorder traversal (Iterative): \n");
+    inorderTraversalIterative(root);
 
-  printf("\nPreorder traversal \n");
-  preorderTraversal(root);
+    printf("\nPreorder traversal (Iterative): \n");
+    preorderTraversalIterative(root);
 
-  printf("\nPostorder traversal \n");
-  postorderTraversal(root);
+    printf("\nPostorder traversal (Iterative): \n");
+    postorderTraversalIterative(root);
+
+    return 0;
 }
 
-
 /* Output
-
-Inorder traversal 
-4 ->2 ->1 ->3 ->
-Preorder traversal 
-1 ->2 ->4 ->3 ->
-Postorder traversal 
-4 ->2 ->3 ->1 ->
-
-*/  
-
-  
+Inorder traversal (Iterative): 
+4 -> 2 -> 1 -> 3 -> 
+Preorder traversal (Iterative): 
+1 -> 2 -> 4 -> 3 -> 
+Postorder traversal (Iterative): 
+4 -> 2 -> 3 -> 1 -> 
+*/
